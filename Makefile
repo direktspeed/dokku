@@ -1,5 +1,3 @@
-DOKKU_VERSION = master
-
 SSHCOMMAND_URL ?= https://raw.github.com/progrium/sshcommand/master/sshcommand
 PLUGINHOOK_URL ?= https://s3.amazonaws.com/progrium-pluginhook/pluginhook_0.1.0_amd64.deb
 STACK_URL ?= https://github.com/progrium/buildstep.git
@@ -40,22 +38,9 @@ pluginhook:
 	wget -qO /tmp/pluginhook_0.1.0_amd64.deb ${PLUGINHOOK_URL}
 	dpkg -i /tmp/pluginhook_0.1.0_amd64.deb
 
-docker: aufs
-	egrep -i "^docker" /etc/group || groupadd docker
+docker: apt-get update
+	apt-get install -y docker.io
 	usermod -aG docker dokku
-	curl https://get.docker.io/gpg | apt-key add -
-	echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list
-	apt-get update
-ifdef DOCKER_VERSION
-	apt-get install -y lxc-docker-${DOCKER_VERSION}
-else
-	apt-get install -y lxc-docker
-endif
-	sleep 2 # give docker a moment i guess
-
-aufs:
-	lsmod | grep aufs || modprobe aufs || apt-get install -y linux-image-extra-`uname -r`
-
 stack:
 ifdef BUILD_STACK
 	@docker images | grep progrium/buildstep || (git clone ${STACK_URL} /tmp/buildstep && docker build -t progrium/buildstep /tmp/buildstep && rm -rf /tmp/buildstep)
